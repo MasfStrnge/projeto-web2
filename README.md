@@ -1,6 +1,6 @@
-#Sistema de Gestão de Horas Acadêmicas (SGHA)
+# Sistema de Gestão de Horas Acadêmicas (SGHA)
 
-##Contexto e Objetivo
+## Contexto e Objetivo
 
 O SGHA é uma aplicação Java Web (MVC) projetada para gerenciar a submissão,
 verificação de duplicidades, avaliação por comissões específicas, fluxo de recursos e
