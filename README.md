@@ -8,6 +8,10 @@ homologação de comprovantes de carga horária para discentes de Sistemas de
 Informação em três categorias: Horas Complementares, Ações Extensionistas e Horas
 de Estágio.
 
+Nesta etapa, o projeto contém a modelagem inicial, a página de entrada e um envio
+demonstrativo de comprovantes. Recursos, persistência e os demais fluxos descritos
+acima ainda serão implementados nas próximas etapas.
+
 ## Tecnologias
 
 - Java (JDK 11 ou superior)
@@ -23,6 +27,7 @@ MySQL/MariaDB e camada DAO.
 ```
 projeto-web2/
 ├── src/main/java/br/ufrrj/sgha/controller/   # Servlets (controladores)
+├── src/main/java/br/ufrrj/sgha/model/        # Modelo de domínio e armazenamento
 ├── src/main/webapp/                          # JSPs e arquivos estáticos
 ├── lib/                                      # Bibliotecas JSTL (.jar)
 ├── build/app/                                # Saída da compilação (aplicação exploded)
@@ -76,6 +81,24 @@ apache-tomcat-10.1.62\bin\startup.bat       # Windows
 - Teste do servlet: http://localhost:8080/sgha/ola
 
 Para parar o servidor, use `shutdown.sh` (ou `shutdown.bat`) na mesma pasta `bin/`.
+
+## Armazenamento de comprovantes
+
+O formulário da página inicial envia arquivos PDF, PNG ou JPEG de até 10 MB para
+`/comprovantes`. O servidor guarda o arquivo fora da aplicação, por padrão em
+`${user.home}/sgha/uploads`, e gera um nome aleatório para não usar o nome informado
+pelo navegador como caminho.
+
+Para escolher outro diretório, defina a propriedade Java `sgha.upload.dir` ao iniciar
+o Tomcat. No PowerShell, por exemplo:
+
+```powershell
+$env:CATALINA_OPTS = "$env:CATALINA_OPTS -Dsgha.upload.dir=C:\dados\sgha"
+.\apache-tomcat-10.1.62\bin\startup.bat
+```
+
+O endpoint demonstra o recebimento e o armazenamento do arquivo. A associação do
+comprovante a uma solicitação persistida será feita junto com o fluxo de solicitações.
 
 ## Configuração do VS Code
 
