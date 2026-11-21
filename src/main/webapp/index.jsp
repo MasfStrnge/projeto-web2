@@ -85,9 +85,6 @@ taglib prefix="c" uri="jakarta.tags.core" %>
     </form>
 
     <footer>
-      <c:if test="${not empty caminhoComprovante}">
-        <p>Comprovante salvo em: <c:out value="${caminhoComprovante}" /></p>
-      </c:if>
       <p>
         <a href="${pageContext.request.contextPath}/comissao/login"
           >Acesso da Comissão / Coordenação / Secretaria</a
