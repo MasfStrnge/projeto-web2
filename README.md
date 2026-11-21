@@ -121,7 +121,6 @@ as pastas, compila os servlets, monta a aplicação, remove o deploy antigo e o 
 ### Acessar
 
 - Página inicial: http://localhost:8080/sgha/
-- Teste do servlet: http://localhost:8080/sgha/ola
 
 Para parar o servidor, use `shutdown.bat` no Windows ou `shutdown.sh` no Linux/macOS,
 na pasta `bin/` do Tomcat.
