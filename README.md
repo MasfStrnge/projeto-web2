@@ -8,9 +8,10 @@ homologação de comprovantes de carga horária para discentes de Sistemas de
 Informação em três categorias: Horas Complementares, Ações Extensionistas e Horas
 de Estágio.
 
-Nesta etapa, o projeto contém a modelagem inicial, a página de entrada e um envio
-demonstrativo de comprovantes. Recursos, persistência e os demais fluxos descritos
-acima ainda serão implementados nas próximas etapas.
+Nesta etapa, o projeto contém a modelagem inicial, a página de acesso do discente e
+o fluxo de cadastro e envio de solicitações, com upload de comprovantes. Os dados
+ainda ficam em memória; a avaliação pelas comissões, o fluxo de recursos e a
+persistência serão implementados nas próximas etapas.
 
 ## Tecnologias
 
@@ -27,7 +28,8 @@ MySQL/MariaDB e camada DAO.
 ```
 projeto-web2/
 ├── src/main/java/br/ufrrj/sgha/controller/   # Servlets (controladores)
-├── src/main/java/br/ufrrj/sgha/model/        # Modelo de domínio e armazenamento
+├── src/main/java/br/ufrrj/sgha/model/        # Modelo de domínio
+├── src/main/java/br/ufrrj/sgha/repository/   # Dados em memória
 ├── src/main/webapp/                          # JSPs e arquivos estáticos
 ├── lib/                                      # Bibliotecas JSTL (.jar)
 ├── build/app/                                # Saída da compilação (aplicação exploded)
@@ -84,10 +86,14 @@ Para parar o servidor, use `shutdown.sh` (ou `shutdown.bat`) na mesma pasta `bin
 
 ## Armazenamento de comprovantes
 
-O formulário da página inicial envia arquivos PDF, PNG ou JPEG de até 10 MB para
-`/comprovantes`. O servidor guarda o arquivo fora da aplicação, por padrão em
-`${user.home}/sgha/uploads`, e gera um nome aleatório para não usar o nome informado
-pelo navegador como caminho.
+O formulário de solicitação envia arquivos PDF, PNG ou JPEG de até 5 MB para
+`/discente/solicitacoes`. O servidor guarda o arquivo fora da aplicação, por padrão
+em `${user.home}/sgha/uploads`, e gera um nome aleatório para não usar o nome
+informado pelo navegador como caminho. O caminho salvo fica associado à solicitação
+no repositório em memória.
+
+A rota `/comprovantes` também está disponível como demonstração simples de upload e
+aceita arquivos de até 10 MB.
 
 Para escolher outro diretório, defina a propriedade Java `sgha.upload.dir` ao iniciar
 o Tomcat. No PowerShell, por exemplo:
@@ -97,13 +103,14 @@ $env:CATALINA_OPTS = "$env:CATALINA_OPTS -Dsgha.upload.dir=C:\dados\sgha"
 .\apache-tomcat-10.1.62\bin\startup.bat
 ```
 
-O endpoint demonstra o recebimento e o armazenamento do arquivo. A associação do
-comprovante a uma solicitação persistida será feita junto com o fluxo de solicitações.
+Como as solicitações ficam em memória, elas deixam de existir quando o servidor é
+reiniciado.
 
 ## Configuração do VS Code
 
-O arquivo `.vscode/settings.json` referencia o `servlet-api.jar` do Tomcat por caminho
-absoluto. Ajuste esse caminho para o da sua máquina:
+Se o VS Code não localizar as classes do Jakarta Servlet, adicione o `servlet-api.jar`
+do Tomcat às bibliotecas referenciadas pelo projeto e ajuste o caminho para o da sua
+máquina:
 
 ```json
 "java.project.referencedLibraries": [
@@ -116,4 +123,3 @@ absoluto. Ajuste esse caminho para o da sua máquina:
 
 - [ ] Entregável 1: contexto e objetivo do sistema
 - [ ] Entregável 2: modelagem + projeto Java Web inicial (controladores em memória, JSPs e upload)
--
