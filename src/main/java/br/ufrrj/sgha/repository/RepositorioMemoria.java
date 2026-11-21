@@ -64,6 +64,10 @@ public final class RepositorioMemoria {
         TODAS_SOLICITACOES.add(solicitacao);
     }
 
+    public static void removerSolicitacao(Solicitacao solicitacao) {
+        TODAS_SOLICITACOES.remove(solicitacao);
+    }
+
     public static List<Solicitacao> listarTodasSolicitacoes() {
         synchronized (TODAS_SOLICITACOES) {
             return new ArrayList<>(TODAS_SOLICITACOES);

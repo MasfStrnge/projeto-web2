@@ -26,6 +26,16 @@ public class Discente {
         solicitacoes.add(solicitacao);
     }
 
+    public void removerSolicitacao(Solicitacao solicitacao) {
+        if (solicitacao == null) {
+            throw new IllegalArgumentException("A solicitação é obrigatória.");
+        }
+        if (solicitacao.getStatus() != StatusSolicitacao.CRIADA) {
+            throw new IllegalStateException("Somente solicitações com status CRIADA podem ser excluídas.");
+        }
+        solicitacoes.remove(solicitacao);
+    }
+
     public Long getId() {
         return id;
     }
