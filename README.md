@@ -8,10 +8,11 @@ homologação de comprovantes de carga horária para discentes de Sistemas de
 Informação em três categorias: Horas Complementares, Ações Extensionistas e Horas
 de Estágio.
 
-Nesta etapa, o projeto contém a modelagem inicial, a página de acesso do discente e
-o fluxo de cadastro e envio de solicitações, com upload de comprovantes. Os dados
-ainda ficam em memória; a avaliação pelas comissões, o fluxo de recursos e a
-persistência serão implementados nas próximas etapas.
+Nesta etapa, o projeto contém a modelagem inicial, as páginas de acesso do discente e
+da comissão, o cadastro e envio de solicitações com upload de comprovantes e um
+painel em que a comissão registra parecer e horas concedidas. Os dados das
+solicitações ainda ficam em memória. O fluxo de recursos e a persistência ainda serão
+implementados nas próximas etapas.
 
 ## Tecnologias
 
@@ -44,7 +45,40 @@ projeto-web2/
 
 ## Como executar
 
-Na raiz do projeto:
+Na raiz do projeto, siga os comandos do seu sistema operacional.
+
+### Windows (PowerShell)
+
+```powershell
+$tomcat = ".\apache-tomcat-10.1.62"
+$build = ".\build\app"
+
+# 1. Compilar os servlets
+New-Item -ItemType Directory -Force "$build\WEB-INF\classes", "$build\WEB-INF\lib" | Out-Null
+$javaFiles = Get-ChildItem ".\src\main\java" -Filter "*.java" -Recurse | ForEach-Object FullName
+javac -cp "$tomcat\lib\servlet-api.jar" -d "$build\WEB-INF\classes" $javaFiles
+if ($LASTEXITCODE -ne 0) { throw "A compilação falhou." }
+
+# 2. Montar a aplicação
+Copy-Item ".\src\main\webapp\*" $build -Recurse -Force
+Copy-Item ".\lib\*.jar" "$build\WEB-INF\lib" -Force
+
+# 3. Publicar no Tomcat (substitui a versão anterior, se existir)
+$deploy = "$tomcat\webapps\sgha"
+if (Test-Path $deploy) { Remove-Item $deploy -Recurse -Force }
+Copy-Item $build $deploy -Recurse
+
+# 4. Iniciar o servidor
+$env:CATALINA_HOME = (Resolve-Path $tomcat).Path
+$env:CATALINA_BASE = $env:CATALINA_HOME
+& "$tomcat\bin\startup.bat"
+```
+
+O Tomcat precisa encontrar o JDK pela variável `JAVA_HOME` (ou `JRE_HOME`). Se ainda
+não estiver definida, configure `JAVA_HOME` para a pasta do JDK antes de iniciar o
+servidor. Por exemplo: `$env:JAVA_HOME = "C:\Program Files\Java\jdk-20"`.
+
+### Linux/macOS (Bash)
 
 **1. Compilar os servlets**
 
@@ -73,8 +107,7 @@ cp -r build/app apache-tomcat-10.1.62/webapps/sgha
 **4. Iniciar o servidor**
 
 ```bash
-./apache-tomcat-10.1.62/bin/startup.sh      # Linux/macOS
-apache-tomcat-10.1.62\bin\startup.bat       # Windows
+./apache-tomcat-10.1.62/bin/startup.sh
 ```
 
 **5. Acessar**
@@ -82,7 +115,8 @@ apache-tomcat-10.1.62\bin\startup.bat       # Windows
 - Página inicial: http://localhost:8080/sgha/
 - Teste do servlet: http://localhost:8080/sgha/ola
 
-Para parar o servidor, use `shutdown.sh` (ou `shutdown.bat`) na mesma pasta `bin/`.
+Para parar o servidor, use `shutdown.bat` no Windows ou `shutdown.sh` no Linux/macOS,
+na pasta `bin/` do Tomcat.
 
 ## Armazenamento de comprovantes
 
@@ -99,6 +133,8 @@ Para escolher outro diretório, defina a propriedade Java `sgha.upload.dir` ao i
 o Tomcat. No PowerShell, por exemplo:
 
 ```powershell
+$env:CATALINA_HOME = (Resolve-Path .\apache-tomcat-10.1.62).Path
+$env:CATALINA_BASE = $env:CATALINA_HOME
 $env:CATALINA_OPTS = "$env:CATALINA_OPTS -Dsgha.upload.dir=C:\dados\sgha"
 .\apache-tomcat-10.1.62\bin\startup.bat
 ```
@@ -121,5 +157,5 @@ máquina:
 
 ## Roadmap
 
-- [ ] Entregável 1: contexto e objetivo do sistema
-- [ ] Entregável 2: modelagem + projeto Java Web inicial (controladores em memória, JSPs e upload)
+- [x] Entregável 1: definição dos integrantes do grupo
+- [x] Entregável 2: modelagem + projeto Java Web inicial (controladores em memória, JSPs, upload e painel da comissão)
