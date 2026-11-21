@@ -52,6 +52,8 @@ public class SolicitacaoDiscenteServlet extends HttpServlet {
         try {
             if ("enviar".equals(acao)) {
                 processarEnvio(req, discente);
+            } else if ("excluir".equals(acao)) {
+                processarExclusao(req, discente);
             } else {
                 processarCriacao(req, discente);
             }
@@ -106,6 +108,31 @@ public class SolicitacaoDiscenteServlet extends HttpServlet {
             caminhoSalvo
         );
         RepositorioMemoria.registrarSolicitacao(nova);
+    }
+
+    private void processarExclusao(HttpServletRequest req, Discente discente) {
+        long id;
+        try {
+            id = Long.parseLong(req.getParameter("idSolicitacao"));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Identificador de solicitação inválido.");
+        }
+
+        Solicitacao alvo = discente.getSolicitacoes().stream()
+                .filter(s -> s.getId() != null && s.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Solicitação não encontrada."));
+
+        discente.removerSolicitacao(alvo);
+        RepositorioMemoria.removerSolicitacao(alvo);
+
+        // Remove também o arquivo físico salvo em ~/sgha/uploads/
+        if (alvo.getCaminhoArquivoComprovante() != null) {
+            try {
+                java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(alvo.getCaminhoArquivoComprovante()));
+            } catch (IOException ignored) {
+            }
+        }
     }
 
     private void processarEnvio(HttpServletRequest req, Discente discente) {

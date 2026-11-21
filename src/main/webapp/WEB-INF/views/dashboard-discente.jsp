@@ -96,6 +96,12 @@
                                             <input type="hidden" name="idSolicitacao" value="${s.id}">
                                             <button type="submit">Enviar para Comissão</button>
                                         </form>
+                                        <form action="${pageContext.request.contextPath}/discente/solicitacoes" method="post" style="display:inline;"
+                                        onsubmit="return confirm('Deseja realmente excluir esta solicitação?');">
+                                        <input type="hidden" name="acao" value="excluir">
+                                        <input type="hidden" name="idSolicitacao" value="${s.id}">
+                                        <button type="submit">Excluir</button>
+                                        </form>
                                     </c:if>
                                 </td>
                             </tr>
