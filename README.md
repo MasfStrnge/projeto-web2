@@ -139,24 +139,14 @@ na pasta `bin/` do Tomcat.
 
 ## Armazenamento de comprovantes
 
-O formulário de solicitação envia arquivos PDF, PNG ou JPEG de até 5 MB para
-`/discente/solicitacoes`. O servidor guarda o arquivo fora da aplicação, por padrão
-em `${user.home}/sgha/uploads`, e gera um nome aleatório para não usar o nome
-informado pelo navegador como caminho. O caminho salvo fica associado à solicitação
-no repositório em memória.
+Os comprovantes enviados pelo discente (PDF, PNG ou JPEG, até 5 MB) ficam fora da
+aplicação, por padrão em `${user.home}/sgha/uploads`, com nome aleatório. O caminho é
+associado à solicitação no repositório em memória.
 
-A rota `/comprovantes` também está disponível como demonstração simples de upload e
-aceita arquivos de até 10 MB.
+Para usar outro diretório, defina a propriedade Java `sgha.upload.dir` ao iniciar o
+Tomcat. No PowerShell, por exemplo:
 
-Para escolher outro diretório, defina a propriedade Java `sgha.upload.dir` ao iniciar
-o Tomcat. No PowerShell, por exemplo:
-
-```powershell
-$env:CATALINA_HOME = (Resolve-Path .\apache-tomcat-10.1.62).Path
-$env:CATALINA_BASE = $env:CATALINA_HOME
-$env:CATALINA_OPTS = "$env:CATALINA_OPTS -Dsgha.upload.dir=C:\dados\sgha"
-.\apache-tomcat-10.1.62\bin\startup.bat
-```
+    $env:CATALINA_OPTS = "$env:CATALINA_OPTS -Dsgha.upload.dir=C:\dados\sgha"
 
 Como as solicitações ficam em memória, elas deixam de existir quando o servidor é
 reiniciado.
