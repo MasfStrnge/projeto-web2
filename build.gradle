@@ -1,0 +1,55 @@
+plugins {
+    id 'war'
+}
+
+group = 'br.ufrrj.sgha'
+version = '0.3.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Fornecida pelo Tomcat 10.1: não entra no WAR.
+    compileOnly 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
+    // JSTL (jakarta.tags.core) usado nas JSPs.
+    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.2'
+    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
+
+    // JPA com Hibernate 6.
+    implementation 'org.hibernate.orm:hibernate-core:6.4.4.Final'
+
+    // Driver do MySQL.
+    runtimeOnly 'com.mysql:mysql-connector-j:8.3.0'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 11
+}
+
+// O nome do WAR define o contexto no Tomcat: http://localhost:8080/sgha/
+war {
+    archiveFileName = 'sgha.war'
+}
+
+// ---- Publicação no Tomcat local ------------------------------------------
+// Uso: ./gradlew deploy   (outra pasta: ./gradlew deploy -PtomcatHome=/caminho/do/tomcat)
+def tomcatHome = findProperty('tomcatHome') ?: 'apache-tomcat-10.1.62'
+
+tasks.register('limparDeploy', Delete) {
+    group = 'deploy'
+    description = 'Remove a versão publicada e o cache de trabalho do Tomcat.'
+    delete "${tomcatHome}/webapps/sgha",
+           "${tomcatHome}/webapps/sgha.war",
+           "${tomcatHome}/work/Catalina/localhost/sgha"
+}
+
+tasks.register('deploy', Copy) {
+    group = 'deploy'
+    description = 'Gera o WAR e copia para a pasta webapps do Tomcat (pare o Tomcat antes).'
+    dependsOn war, limparDeploy
+    from war.archiveFile
+    into "${tomcatHome}/webapps"
+}
