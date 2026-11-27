@@ -1,14 +1,40 @@
 package br.ufrrj.sgha.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.LocalDate;
 
 /** Uma atuação representa o perfil de uma pessoa durante um período específico. */
+@Entity
+@Table(name = "atuacoes_comissao")
 public class AtuacaoComissao {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "membro_id", nullable = false)
     private MembroComissao membro;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private PerfilComissao perfil;
+
+    @Column(name = "data_inicio", nullable = false)
     private LocalDate dataInicio;
+
+    @Column(name = "data_validade")
     private LocalDate dataValidade;
+
+    @Column(nullable = false)
     private boolean ativa = true;
 
     public AtuacaoComissao() {

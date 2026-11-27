@@ -1,5 +1,18 @@
 package br.ufrrj.sgha.model;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -7,21 +20,55 @@ import java.util.Collections;
 import java.util.List;
 
 /** Pedido do aluno, com o documento enviado e o histórico de decisões. */
+@Entity
+@Table(name = "solicitacoes")
 public class Solicitacao {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "discente_id", nullable = false)
     private Discente discente;
+
+    @Column(name = "nome_documento", nullable = false)
     private String nomeDocumento;
+
+    @Column(name = "caminho_arquivo_comprovante", nullable = false, length = 500)
     private String caminhoArquivoComprovante;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_horas", nullable = false)
     private TipoHoras tipoHoras;
+
+    @Column(name = "horas_solicitadas", nullable = false)
     private Integer horasSolicitadas;
+
+    @Column(name = "horas_concedidas")
     private Integer horasConcedidas;
+
+    @Column(name = "observacao_discente", length = 1000)
     private String observacaoDiscente;
+
+    @Column(name = "observacao_parecer_publico", length = 1000)
     private String observacaoParecerPublico;
+
+    @Column(name = "observacao_administrativa", length = 1000)
     private String observacaoAdministrativa;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private StatusSolicitacao status = StatusSolicitacao.CRIADA;
+
+    @Column(name = "data_criacao", nullable = false)
     private LocalDateTime dataCriacao = LocalDateTime.now();
+
+    @Column(name = "data_ultima_atualizacao", nullable = false)
     private LocalDateTime dataUltimaAtualizacao = LocalDateTime.now();
-    private final List<HistoricoStatus> historicos = new ArrayList<>();
+
+    @OneToMany(mappedBy = "solicitacao", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dataRegistro ASC")
+    private List<HistoricoStatus> historicos = new ArrayList<>();
 
     public Solicitacao() {
     }
@@ -83,7 +130,9 @@ public class Solicitacao {
 
     private void registrarHistorico(StatusSolicitacao estado, String observacao, String administrativa,
                                     String responsavel, AtuacaoComissao atuacao) {
-        historicos.add(new HistoricoStatus(estado, observacao, administrativa, responsavel, atuacao));
+        HistoricoStatus item = new HistoricoStatus(estado, observacao, administrativa, responsavel, atuacao);
+        item.setSolicitacao(this);
+        historicos.add(item);
     }
 
     private void exigirStatus(StatusSolicitacao esperado) {

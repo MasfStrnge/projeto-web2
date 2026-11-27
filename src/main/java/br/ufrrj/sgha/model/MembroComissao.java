@@ -1,22 +1,47 @@
 package br.ufrrj.sgha.model;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /** Conta de um servidor; os perfis que ele ocupa são registrados como atuações. */
+@Entity
+@Table(name = "membros_comissao")
 public class MembroComissao {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
     private String username;
+
+    @Column(nullable = false)
     private String senha;
+
+    @Column(name = "nome_completo", nullable = false)
     private String nomeCompleto;
+
     private String email;
     private String departamento;
     private String formacao;
+
+    @Column(nullable = false)
     private boolean ativo = true;
+
+    @Column(name = "data_criacao_cadastro", nullable = false)
     private LocalDateTime dataCriacaoCadastro = LocalDateTime.now();
-    private final List<AtuacaoComissao> atuacoes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AtuacaoComissao> atuacoes = new ArrayList<>();
 
     public MembroComissao() {
     }
