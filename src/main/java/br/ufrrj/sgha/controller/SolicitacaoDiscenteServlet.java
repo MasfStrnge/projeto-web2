@@ -1,10 +1,12 @@
 package br.ufrrj.sgha.controller;
 
+import br.ufrrj.sgha.dao.DiscenteDAO;
+import br.ufrrj.sgha.dao.SolicitacaoDAO;
 import br.ufrrj.sgha.model.ArmazenamentoComprovantes;
 import br.ufrrj.sgha.model.Discente;
 import br.ufrrj.sgha.model.Solicitacao;
+import br.ufrrj.sgha.model.StatusSolicitacao;
 import br.ufrrj.sgha.model.TipoHoras;
-import br.ufrrj.sgha.repository.RepositorioMemoria;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,7 +17,11 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @WebServlet("/discente/solicitacoes")
 @MultipartConfig(
@@ -24,6 +30,8 @@ import java.util.Locale;
     maxRequestSize = 1024 * 1024 * 10  // 10 MB
 )
 public class SolicitacaoDiscenteServlet extends HttpServlet {
+    private final DiscenteDAO discenteDAO = new DiscenteDAO();
+    private final SolicitacaoDAO solicitacaoDAO = new SolicitacaoDAO();
     private final ArmazenamentoComprovantes armazenamento = new ArmazenamentoComprovantes();
 
     @Override
@@ -34,7 +42,7 @@ public class SolicitacaoDiscenteServlet extends HttpServlet {
             return;
         }
 
-        req.setAttribute("tiposHoras", TipoHoras.values());
+        prepararTela(req, discente);
         req.getRequestDispatcher("/WEB-INF/views/dashboard-discente.jsp").forward(req, res);
     }
 
@@ -60,7 +68,7 @@ public class SolicitacaoDiscenteServlet extends HttpServlet {
             res.sendRedirect(req.getContextPath() + "/discente/solicitacoes");
         } catch (IllegalArgumentException | IllegalStateException e) {
             req.setAttribute("erro", e.getMessage());
-            req.setAttribute("tiposHoras", TipoHoras.values());
+            prepararTela(req, discente);
             req.getRequestDispatcher("/WEB-INF/views/dashboard-discente.jsp").forward(req, res);
         }
     }
@@ -83,6 +91,13 @@ public class SolicitacaoDiscenteServlet extends HttpServlet {
             throw new IllegalArgumentException("Informe uma quantidade válida de horas pretendidas.");
         }
 
+        TipoHoras tipoHoras;
+        try {
+            tipoHoras = TipoHoras.valueOf(tipoHorasStr);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Selecione uma categoria válida.");
+        }
+
         Part comprovante = req.getPart("arquivoComprovante");
         if (comprovante == null || comprovante.getSize() == 0) {
             throw new IllegalArgumentException("O envio do comprovante é obrigatório.");
@@ -98,19 +113,39 @@ public class SolicitacaoDiscenteServlet extends HttpServlet {
             caminhoSalvo = armazenamento.salvar(conteudo, nomeOriginal);
         }
 
-        TipoHoras tipoHoras = TipoHoras.valueOf(tipoHorasStr);
-        Solicitacao nova = new Solicitacao(
-            discente,
-            nomeDocumento,
-            tipoHoras,
-            horasSolicitadas,
-            observacaoDiscente,
-            caminhoSalvo
-        );
-        RepositorioMemoria.registrarSolicitacao(nova);
+        try {
+            Solicitacao nova = new Solicitacao(
+                discente,
+                nomeDocumento,
+                tipoHoras,
+                horasSolicitadas,
+                observacaoDiscente,
+                caminhoSalvo
+            );
+            solicitacaoDAO.registrarSolicitacao(nova);
+        } catch (RuntimeException e) {
+            apagarComprovante(caminhoSalvo);
+            throw e;
+        }
     }
 
     private void processarExclusao(HttpServletRequest req, Discente discente) {
+        Solicitacao alvo = buscarSolicitacaoDoDiscente(req, discente);
+        if (alvo.getStatus() != StatusSolicitacao.CRIADA) {
+            throw new IllegalStateException("Somente solicitações com status CRIADA podem ser excluídas.");
+        }
+
+        solicitacaoDAO.removerSolicitacao(alvo.getId());
+        apagarComprovante(alvo.getCaminhoArquivoComprovante());
+    }
+
+    private void processarEnvio(HttpServletRequest req, Discente discente) {
+        Solicitacao alvo = buscarSolicitacaoDoDiscente(req, discente);
+        alvo.enviar();
+        solicitacaoDAO.atualizar(alvo);
+    }
+
+    private Solicitacao buscarSolicitacaoDoDiscente(HttpServletRequest req, Discente discente) {
         long id;
         try {
             id = Long.parseLong(req.getParameter("idSolicitacao"));
@@ -118,48 +153,48 @@ public class SolicitacaoDiscenteServlet extends HttpServlet {
             throw new IllegalArgumentException("Identificador de solicitação inválido.");
         }
 
-        Solicitacao alvo = discente.getSolicitacoes().stream()
-                .filter(s -> s.getId() != null && s.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Solicitação não encontrada."));
-
-        discente.removerSolicitacao(alvo);
-        RepositorioMemoria.removerSolicitacao(alvo);
-
-        // Remove também o arquivo físico salvo em ~/sgha/uploads/
-        if (alvo.getCaminhoArquivoComprovante() != null) {
-            try {
-                java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(alvo.getCaminhoArquivoComprovante()));
-            } catch (IOException ignored) {
-            }
+        Solicitacao solicitacao = solicitacaoDAO.buscarSolicitacaoPorId(id);
+        if (solicitacao == null || solicitacao.getDiscente() == null
+                || !Objects.equals(solicitacao.getDiscente().getId(), discente.getId())) {
+            throw new IllegalArgumentException("Solicitação não encontrada.");
         }
-    }
-
-    private void processarEnvio(HttpServletRequest req, Discente discente) {
-        String idStr = req.getParameter("idSolicitacao");
-        long id;
-        try {
-            id = Long.parseLong(idStr);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Identificador de solicitação inválido.");
-        }
-
-        Solicitacao alvo = discente.getSolicitacoes().stream()
-                .filter(s -> s.getId() != null && s.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Solicitação não encontrada."));
-
-        alvo.enviar();
+        return solicitacao;
     }
 
     private Discente obterDiscenteSessao(HttpServletRequest req, HttpServletResponse res)
             throws IOException {
         HttpSession sessao = req.getSession(false);
-        if (sessao == null || sessao.getAttribute("discenteLogado") == null) {
+        Object id = sessao == null ? null : sessao.getAttribute("discenteId");
+        if (!(id instanceof Long)) {
             res.sendRedirect(req.getContextPath() + "/index.jsp?expirada=1");
             return null;
         }
-        return (Discente) sessao.getAttribute("discenteLogado");
+
+        Discente discente = discenteDAO.buscarPorId((Long) id);
+        if (discente == null) {
+            sessao.invalidate();
+            res.sendRedirect(req.getContextPath() + "/index.jsp?expirada=1");
+            return null;
+        }
+        return discente;
+    }
+
+    private void prepararTela(HttpServletRequest req, Discente discente) {
+        List<Solicitacao> solicitacoes = solicitacaoDAO.listarPorDiscenteId(discente.getId());
+        req.setAttribute("discente", discente);
+        req.setAttribute("solicitacoes", solicitacoes);
+        req.setAttribute("tiposHoras", TipoHoras.values());
+    }
+
+    private void apagarComprovante(String caminho) {
+        if (caminho == null || caminho.isBlank()) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(Paths.get(caminho));
+        } catch (IOException ignored) {
+            // A remoção do arquivo não deve desfazer a remoção já concluída no banco.
+        }
     }
 
     private boolean extensaoPermitida(String nomeArquivo) {

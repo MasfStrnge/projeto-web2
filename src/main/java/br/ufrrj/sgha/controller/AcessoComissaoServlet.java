@@ -1,7 +1,7 @@
 package br.ufrrj.sgha.controller;
 
 import br.ufrrj.sgha.model.AtuacaoComissao;
-import br.ufrrj.sgha.repository.RepositorioMemoria;
+import br.ufrrj.sgha.dao.MembroComissaoDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -12,6 +12,7 @@ import java.io.IOException;
 
 @WebServlet(urlPatterns = {"/comissao/login", "/comissao/logout"})
 public class AcessoComissaoServlet extends HttpServlet {
+    private final MembroComissaoDAO membroComissaoDAO = new MembroComissaoDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
@@ -36,9 +37,13 @@ public class AcessoComissaoServlet extends HttpServlet {
         String senha = req.getParameter("senha");
 
         try {
-            AtuacaoComissao atuacao = RepositorioMemoria.autenticarComissao(username, senha);
+            AtuacaoComissao atuacao = membroComissaoDAO.autenticarComissao(username, senha);
+            HttpSession sessaoAnterior = req.getSession(false);
+            if (sessaoAnterior != null) {
+                sessaoAnterior.invalidate();
+            }
             HttpSession sessao = req.getSession(true);
-            sessao.setAttribute("atuacaoLogada", atuacao);
+            sessao.setAttribute("atuacaoId", atuacao.getId());
 
             res.sendRedirect(req.getContextPath() + "/comissao/painel");
         } catch (IllegalArgumentException | IllegalStateException e) {

@@ -18,8 +18,8 @@
 <body>
     <header>
         <div>
-            <strong>Servidor:</strong> <c:out value="${sessionScope.atuacaoLogada.membro.nomeCompleto}" /> |
-            <strong>Perfil Ativo:</strong> ${sessionScope.atuacaoLogada.perfil}
+            <strong>Servidor:</strong> <c:out value="${requestScope.atuacao.membro.nomeCompleto}" /> |
+            <strong>Perfil Ativo:</strong> ${requestScope.atuacao.perfil}
         </div>
         <a href="${pageContext.request.contextPath}/comissao/logout">Sair</a>
     </header>
@@ -60,7 +60,7 @@
                             <td>${s.status}</td>
                             <td>
                                 <c:choose>
-                                    <c:when test="${s.status.name() == 'ENVIADA' and sessionScope.atuacaoLogada.perfil.name() != 'SECRETARIO'}">
+                                    <c:when test="${s.status.name() == 'ENVIADA' and requestScope.atuacao.perfil.name() != 'SECRETARIO'}">
                                         <form action="${pageContext.request.contextPath}/comissao/painel" method="post">
                                             <input type="hidden" name="idSolicitacao" value="${s.id}">
                                             <input type="number" name="horasConcedidas" min="1" max="${s.horasSolicitadas}" placeholder="Horas concedidas" required>
