@@ -83,8 +83,9 @@ public class PainelComissaoServlet extends HttpServlet {
 
     private List<Solicitacao> filtrarParaPerfil(PerfilComissao perfil) {
         return solicitacaoDAO.listarTodasSolicitacoes().stream()
-                .filter(s -> s.getStatus() != StatusSolicitacao.CRIADA
-                          && s.getStatus() != StatusSolicitacao.CANCELADA)
+                // O painel atual só permite emitir parecer para solicitações ENVIADA.
+                // Recursos e pareceres de colegiado ainda não têm ação neste servlet.
+                .filter(s -> s.getStatus() == StatusSolicitacao.ENVIADA)
                 .filter(s -> perfil == PerfilComissao.COORDENADOR
                           || perfil == PerfilComissao.SECRETARIO
                           || perfil.podeAnalisar(s.getTipoHoras()))
