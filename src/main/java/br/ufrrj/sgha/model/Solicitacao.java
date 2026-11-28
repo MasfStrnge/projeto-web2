@@ -367,7 +367,11 @@ public class Solicitacao {
         }
         if (this.discente == null) {
             this.discente = discente;
-            discente.adicionarSolicitacao(this);
+            // O lado dono da relação é Solicitacao.discente. Não tente alterar a coleção
+            // inversa quando o Discente veio desanexado do JPA e sua lista está lazy.
+            if (discente.getId() == null) {
+                discente.adicionarSolicitacao(this);
+            }
         }
     }
 
