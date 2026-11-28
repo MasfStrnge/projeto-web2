@@ -53,6 +53,16 @@ public class AtuacaoComissao {
         return dataValidade == null || !data.isAfter(dataValidade);
     }
 
+    /** Verdadeiro se as duas atuações ativas têm algum dia em comum. */
+    public boolean sobrepoe(AtuacaoComissao outra) {
+        if (outra == null || !ativa || !outra.ativa || dataInicio == null || outra.dataInicio == null) {
+            return false;
+        }
+        boolean terminaAntes = dataValidade != null && dataValidade.isBefore(outra.dataInicio);
+        boolean comecaDepois = outra.dataValidade != null && outra.dataValidade.isBefore(dataInicio);
+        return !terminaAntes && !comecaDepois;
+    }
+
     public Long getId() {
         return id;
     }
@@ -73,9 +83,17 @@ public class AtuacaoComissao {
         return perfil;
     }
 
+    /**
+     * O histórico de pareceres aponta para esta atuação, então o perfil de uma atuação
+     * já gravada não muda, para trocar de função, encerre esta e crie outra.
+     */
     public void setPerfil(PerfilComissao perfil) {
         if (perfil == null) {
             throw new IllegalArgumentException("O perfil é obrigatório.");
+        }
+        if (id != null && this.perfil != null && this.perfil != perfil) {
+            throw new IllegalStateException(
+                    "O perfil de uma atuação já registrada não pode mudar. Encerre-a e crie uma nova atuação.");
         }
         this.perfil = perfil;
     }

@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,27 +53,41 @@ public class MembroComissao {
         setNomeCompleto(nomeCompleto);
     }
 
+    /**
+     * Registra uma nova atuação. Duas atuações ativas do mesmo membro não podem
+     * cobrir o mesmo dia, para que o login sempre tenha um único perfil vigente.
+     */
     public void adicionarAtuacao(AtuacaoComissao atuacao) {
         if (atuacao == null) {
             throw new IllegalArgumentException("A atuação é obrigatória.");
         }
-        if (!atuacoes.contains(atuacao)) {
-            atuacoes.add(atuacao);
-            atuacao.setMembro(this);
+        if (atuacoes.contains(atuacao)) {
+            return;
         }
+        for (AtuacaoComissao existente : atuacoes) {
+            if (existente.sobrepoe(atuacao)) {
+                throw new IllegalStateException(
+                        "O período desta atuação se sobrepõe a outra atuação ativa do mesmo membro.");
+            }
+        }
+        atuacoes.add(atuacao);
+        atuacao.setMembro(this);
     }
 
+    /** Atuação vigente hoje; se houver mais de uma, a de início mais recente. */
     public AtuacaoComissao getAtuacaoVigente() {
         if (!ativo) {
             return null;
         }
-        LocalDateTime agora = LocalDateTime.now();
+        LocalDate hoje = LocalDate.now();
+        AtuacaoComissao vigente = null;
         for (AtuacaoComissao atuacao : atuacoes) {
-            if (atuacao.isVigenteEm(agora.toLocalDate())) {
-                return atuacao;
+            if (atuacao.isVigenteEm(hoje)
+                    && (vigente == null || atuacao.getDataInicio().isAfter(vigente.getDataInicio()))) {
+                vigente = atuacao;
             }
         }
-        return null;
+        return vigente;
     }
 
     public Long getId() {

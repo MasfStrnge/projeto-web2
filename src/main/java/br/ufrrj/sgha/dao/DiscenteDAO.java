@@ -5,8 +5,12 @@ import br.ufrrj.sgha.model.Discente;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
+import java.util.List;
 
 public class DiscenteDAO {
+
+    private static final int LIMITE_DA_BUSCA = 50;
 
     public DiscenteDAO() {
     }
@@ -17,17 +21,75 @@ public class DiscenteDAO {
             throw new IllegalArgumentException("A matrícula é obrigatória.");
         }
 
+        Discente existente = buscarPorMatricula(chaveMatricula);
+        if (existente != null) {
+            return existente;
+        }
+        try {
+            return cadastrar(nomeCompleto, chaveMatricula);
+        } catch (PersistenceException e) {
+            Discente cadastradoPorOutroAcesso = buscarPorMatricula(chaveMatricula);
+            if (cadastradoPorOutroAcesso != null) {
+                return cadastradoPorOutroAcesso;
+            }
+            throw e;
+        }
+    }
+
+    public Discente buscarPorId(Long id) {
+        if (id == null) {
+            return null;
+        }
+        EntityManager em = JPAUtil.criarEntityManager();
+        try {
+            return em.find(Discente.class, id);
+        } finally {
+            em.close();
+        }
+    }
+
+    public Discente buscarPorMatricula(String matricula) {
+        if (matricula == null || matricula.isBlank()) {
+            return null;
+        }
+        EntityManager em = JPAUtil.criarEntityManager();
+        try {
+            return em.createQuery("SELECT d FROM Discente d WHERE d.matricula = :mat", Discente.class)
+                    .setParameter("mat", matricula.trim())
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<Discente> buscarPorNomeOuMatricula(String termo) {
+        if (termo == null || termo.isBlank()) {
+            return List.of();
+        }
+        String padrao = "%" + termo.trim().toLowerCase() + "%";
+        EntityManager em = JPAUtil.criarEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT d FROM Discente d "
+                    + "WHERE LOWER(d.nomeCompleto) LIKE :padrao OR d.matricula LIKE :padrao "
+                    + "ORDER BY d.nomeCompleto",
+                    Discente.class)
+                    .setParameter("padrao", padrao)
+                    .setMaxResults(LIMITE_DA_BUSCA)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    private Discente cadastrar(String nomeCompleto, String matricula) {
         EntityManager em = JPAUtil.criarEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            Discente existente = buscarPorMatriculaInterno(em, chaveMatricula);
-            if (existente != null) {
-                tx.commit();
-                return existente;
-            }
-
-            Discente novo = new Discente(nomeCompleto, chaveMatricula);
+            Discente novo = new Discente(nomeCompleto, matricula);
             em.persist(novo);
             tx.commit();
             return novo;
@@ -38,36 +100,6 @@ public class DiscenteDAO {
             throw e;
         } finally {
             em.close();
-        }
-    }
-
-    public Discente buscarPorId(Long id) {
-        if (id == null) {
-            return null;
-        }
-        EntityManager em = JPAUtil.criarEntityManager();
-        try {
-            return em.createQuery(
-                    "SELECT DISTINCT d FROM Discente d LEFT JOIN FETCH d.solicitacoes WHERE d.id = :id",
-                    Discente.class)
-                    .setParameter("id", id)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        } finally {
-            em.close();
-        }
-    }
-
-    private Discente buscarPorMatriculaInterno(EntityManager em, String matricula) {
-        try {
-            return em.createQuery(
-                    "SELECT DISTINCT d FROM Discente d LEFT JOIN FETCH d.solicitacoes WHERE d.matricula = :mat",
-                    Discente.class)
-                    .setParameter("mat", matricula)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return null;
         }
     }
 }
