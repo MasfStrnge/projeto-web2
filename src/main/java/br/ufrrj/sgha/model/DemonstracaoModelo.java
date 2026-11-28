@@ -10,7 +10,7 @@ public final class DemonstracaoModelo {
     }
 
     public static void main(String[] args) throws IOException {
-        Discente discente = new Discente("Leticia de Oliveira Paes", "20240015954");
+        Discente discente = new Discente("Maria dos Santos Oliveira", "20230014893");
         String caminhoComprovante = new ArmazenamentoComprovantes().salvar(
                 new ByteArrayInputStream("Comprovante de demonstração do SGHA.".getBytes(StandardCharsets.UTF_8)),
                 "comprovante-demo.txt");

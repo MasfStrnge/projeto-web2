@@ -1,22 +1,48 @@
 package br.ufrrj.sgha.model;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /** Conta de um servidor; os perfis que ele ocupa são registrados como atuações. */
+@Entity
+@Table(name = "membros_comissao")
 public class MembroComissao {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
     private String username;
+
+    @Column(nullable = false)
     private String senha;
+
+    @Column(name = "nome_completo", nullable = false)
     private String nomeCompleto;
+
     private String email;
     private String departamento;
     private String formacao;
+
+    @Column(nullable = false)
     private boolean ativo = true;
+
+    @Column(name = "data_criacao_cadastro", nullable = false)
     private LocalDateTime dataCriacaoCadastro = LocalDateTime.now();
-    private final List<AtuacaoComissao> atuacoes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AtuacaoComissao> atuacoes = new ArrayList<>();
 
     public MembroComissao() {
     }
@@ -27,27 +53,41 @@ public class MembroComissao {
         setNomeCompleto(nomeCompleto);
     }
 
+    /**
+     * Registra uma nova atuação. Duas atuações ativas do mesmo membro não podem
+     * cobrir o mesmo dia, para que o login sempre tenha um único perfil vigente.
+     */
     public void adicionarAtuacao(AtuacaoComissao atuacao) {
         if (atuacao == null) {
             throw new IllegalArgumentException("A atuação é obrigatória.");
         }
-        if (!atuacoes.contains(atuacao)) {
-            atuacoes.add(atuacao);
-            atuacao.setMembro(this);
+        if (atuacoes.contains(atuacao)) {
+            return;
         }
+        for (AtuacaoComissao existente : atuacoes) {
+            if (existente.sobrepoe(atuacao)) {
+                throw new IllegalStateException(
+                        "O período desta atuação se sobrepõe a outra atuação ativa do mesmo membro.");
+            }
+        }
+        atuacoes.add(atuacao);
+        atuacao.setMembro(this);
     }
 
+    /** Atuação vigente hoje; se houver mais de uma, a de início mais recente. */
     public AtuacaoComissao getAtuacaoVigente() {
         if (!ativo) {
             return null;
         }
-        LocalDateTime agora = LocalDateTime.now();
+        LocalDate hoje = LocalDate.now();
+        AtuacaoComissao vigente = null;
         for (AtuacaoComissao atuacao : atuacoes) {
-            if (atuacao.isVigenteEm(agora.toLocalDate())) {
-                return atuacao;
+            if (atuacao.isVigenteEm(hoje)
+                    && (vigente == null || atuacao.getDataInicio().isAfter(vigente.getDataInicio()))) {
+                vigente = atuacao;
             }
         }
-        return null;
+        return vigente;
     }
 
     public Long getId() {

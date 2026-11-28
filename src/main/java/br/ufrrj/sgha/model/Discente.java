@@ -1,15 +1,32 @@
 package br.ufrrj.sgha.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /** Guarda a identificação do aluno e os pedidos que ele criou. */
+@Entity
+@Table(name = "discentes")
 public class Discente {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "nome_completo", nullable = false)
     private String nomeCompleto;
+
+    @Column(nullable = false, unique = true)
     private String matricula;
-    private final List<Solicitacao> solicitacoes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "discente")
+    private List<Solicitacao> solicitacoes = new ArrayList<>();
 
     public Discente() {
     }
