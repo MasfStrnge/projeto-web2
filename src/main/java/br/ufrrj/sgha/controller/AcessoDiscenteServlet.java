@@ -1,7 +1,7 @@
 package br.ufrrj.sgha.controller;
 
 import br.ufrrj.sgha.model.Discente;
-import br.ufrrj.sgha.repository.RepositorioMemoria;
+import br.ufrrj.sgha.dao.DiscenteDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,6 +13,7 @@ import java.io.IOException;
 @WebServlet(urlPatterns = {"/discente/acesso", "/discente/logout"})
 public class AcessoDiscenteServlet extends HttpServlet {
     private static final int TEMPO_INATIVIDADE_SEGUNDOS = 120;
+    private final DiscenteDAO discenteDAO = new DiscenteDAO();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
@@ -35,9 +36,13 @@ public class AcessoDiscenteServlet extends HttpServlet {
         String matricula = req.getParameter("matricula");
 
         try {
-            Discente discente = RepositorioMemoria.obterOuCadastrarDiscente(nomeCompleto, matricula);
+            Discente discente = discenteDAO.obterOuCadastrarDiscente(nomeCompleto, matricula);
+            HttpSession sessaoAnterior = req.getSession(false);
+            if (sessaoAnterior != null) {
+                sessaoAnterior.invalidate();
+            }
             HttpSession sessao = req.getSession(true);
-            sessao.setAttribute("discenteLogado", discente);
+            sessao.setAttribute("discenteId", discente.getId());
             sessao.setMaxInactiveInterval(TEMPO_INATIVIDADE_SEGUNDOS);
 
             res.sendRedirect(req.getContextPath() + "/discente/solicitacoes");

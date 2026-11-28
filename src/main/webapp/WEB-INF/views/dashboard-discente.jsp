@@ -21,8 +21,8 @@
 <body>
     <header>
         <div>
-            <strong>Discente:</strong> <c:out value="${sessionScope.discenteLogado.nomeCompleto}" /> |
-            <strong>Matrícula:</strong> <c:out value="${sessionScope.discenteLogado.matricula}" />
+            <strong>Discente:</strong> <c:out value="${requestScope.discente.nomeCompleto}" /> |
+            <strong>Matrícula:</strong> <c:out value="${requestScope.discente.matricula}" />
         </div>
         <a href="${pageContext.request.contextPath}/discente/logout">Sair (Logout)</a>
     </header>
@@ -42,7 +42,7 @@
                 <label for="tipoHoras">Comissão Destino</label>
                 <select id="tipoHoras" name="tipoHoras" required>
                     <option value="">Selecione...</option>
-                    <c:forEach items="${tiposHoras}" var="tipo">
+                    <c:forEach items="${requestScope.tiposHoras}" var="tipo">
                         <option value="${tipo.name()}">${tipo}</option>
                     </c:forEach>
                 </select>
@@ -66,7 +66,7 @@
     <section>
         <h2>Minhas Solicitações</h2>
         <c:choose>
-            <c:when test="${empty sessionScope.discenteLogado.solicitacoes}">
+            <c:when test="${empty requestScope.solicitacoes}">
                 <p>Nenhuma solicitação cadastrada até o momento.</p>
             </c:when>
             <c:otherwise>
@@ -82,7 +82,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <c:forEach items="${sessionScope.discenteLogado.solicitacoes}" var="s">
+                        <c:forEach items="${requestScope.solicitacoes}" var="s">
                             <tr>
                                 <td>${s.id}</td>
                                 <td><c:out value="${s.nomeDocumento}" /></td>

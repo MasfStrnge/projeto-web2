@@ -74,7 +74,7 @@ taglib prefix="c" uri="jakarta.tags.core" %>
 
     <div class="demo">
       <strong
-        >Contas pré-cadastradas em memória (senha: <code>123</code>):</strong
+        >Contas de demonstração cadastradas no banco (senha: <code>123</code>):</strong
       >
       <ul>
         <li><code>extensao</code> &mdash; Comissão de Extensão</li>
